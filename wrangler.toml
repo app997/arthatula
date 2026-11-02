@@ -1,0 +1,33 @@
+# Arthatula as ONE Cloudflare Worker: the static app (this folder) plus
+# the API (worker.js routes /api/* to the handlers in functions/), with
+# one D1 database. This is what the "Deploy to Cloudflare" button sets
+# up; see README → "Get your own copy".
+#
+# No database_id on purpose: the first deploy creates a D1 database in
+# the deploying account and binds it as DB. The API creates its tables
+# on first use, so there is no schema step.
+#
+# The original deployment still runs on Cloudflare Pages from the same
+# code (functions/ is Pages' routing); the deploy workflow writes a
+# Pages config for that at deploy time.
+
+name = "arthatula"
+main = "worker.js"
+compatibility_date = "2025-10-01"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+# Every request goes through worker.js, so static files get the same
+# security headers as the API.
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB" # the API reads env.DB: this name must stay "DB"
+database_name = "arthatula"
+
+# The nightly market recap (worker.js scheduled): 01:30 UTC Tuesday to
+# Saturday is 9:30 pm New York (8:30 pm in winter), after each weekday's
+# close. The app also writes it on the first visit after the close.
+[triggers]
+crons = ["30 1 * * 2-6"]

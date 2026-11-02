@@ -1,0 +1,1121 @@
+/* Arthatula — visual layer on top of Tailwind.
+   The "Apple system" layer at the end of this file (iOS look: system
+   font, grouped colors, flat surfaces) overrides the older depth
+   effects described below.
+   Layout comes from Tailwind classes in index.html; this file owns the
+   tokens, the dynamically built pieces (forms, tables, lists), and the
+   depth effects. Rules of the system:
+   - one typeface (the system font: SF Pro on Apple devices), weights 400–700, sizes on the Tailwind scale
+   - flat backgrounds; depth comes from layered shadows, tilt and lift,
+     never from background gradients
+   - spacing 2/4/8/12/16/24/32/40/48px, Tailwind radii, nested radius =
+     outer − gap
+   - motion: transform/opacity only, on --ease, ≥200ms; reduced motion
+     turns movement off (bottom of file)
+   Light pairs: ink #0a0a0a / muted #52525b on #fff and #f4f4f5.
+   Dark pairs: #fafafa / #a1a1aa on #181818, #1f1f1f and #000. */
+:root{
+  --bg:#f4f4f5; --surface:#ffffff; --raised:#fafafa; --sunken:#f4f4f5;
+  --ink:#0a0a0a; --muted:#52525b; --line:#e4e4e7; --line-strong:#d4d4d8;
+  --accent:#0f766e; --accent-bright:#14b8a6; --accent-ink:#ffffff; --accent-ledge:#115e59;
+  --pos:#047857; --neg:#be123c;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --shadow-1:0 1px 2px rgba(10,10,10,.06),0 1px 1px rgba(10,10,10,.04);
+  --shadow-2:0 1px 0 rgba(255,255,255,.9) inset,0 2px 4px rgba(10,10,10,.04),0 12px 24px -8px rgba(10,10,10,.10),0 32px 64px -32px rgba(10,10,10,.18);
+  --shadow-3:0 1px 0 rgba(255,255,255,.9) inset,0 4px 8px rgba(10,10,10,.05),0 24px 48px -12px rgba(10,10,10,.18),0 48px 96px -40px rgba(15,118,110,.25);
+}
+.dark{
+  --bg:#000000; --surface:#181818; --raised:#1f1f1f; --sunken:#000000;
+  --ink:#fafafa; --muted:#a1a1aa; --line:#272727; --line-strong:#313131;
+  --accent:#0d9488; --accent-bright:#2dd4bf; --accent-ledge:#134e4a;
+  --pos:#34d399; --neg:#fb7185;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 1px 0 rgba(255,255,255,.05) inset,0 2px 4px rgba(0,0,0,.4),0 16px 32px -12px rgba(0,0,0,.7);
+  --shadow-3:0 1px 0 rgba(255,255,255,.07) inset,0 4px 8px rgba(0,0,0,.5),0 24px 48px -12px rgba(0,0,0,.8),0 40px 80px -40px rgba(45,212,191,.25);
+}
+*{box-sizing:border-box}
+/* The hidden attribute must win over component display rules (e.g. .actions buttons). */
+[hidden]{display:none !important}
+html{background:var(--bg)}
+body{font-variant-numeric:tabular-nums;background:var(--bg);color:var(--ink)}
+h1,h2,h3,h4{text-wrap:balance}
+p{text-wrap:pretty}
+.skip-link{position:absolute;left:16px;top:-48px;z-index:200;padding:8px 12px;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;transition:transform .3s var(--ease)}
+.skip-link:focus{transform:translateY(64px)}
+
+/* ---- header + floating nav ---- */
+.app-title{background:linear-gradient(90deg,#ffffff,#9b9b9b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nav-float{position:sticky;top:12px;z-index:40;width:fit-content;max-width:calc(100% - 32px);margin:-28px auto 0;padding:4px;border-radius:9999px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;
+  background:rgba(255,255,255,.72);border:1px solid rgba(228,228,231,.9);box-shadow:var(--shadow-2);backdrop-filter:blur(16px) saturate(1.6);-webkit-backdrop-filter:blur(16px) saturate(1.6)}
+.dark .nav-float{background:rgba(24,24,24,.72);border-color:rgba(49,49,49,.9)}
+.tab-ico{display:none;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lbl-short{display:none}
+.tab-btn{padding:8px 16px;border-radius:9999px;background:transparent;color:var(--muted);font-size:14px;line-height:20px;font-weight:600;transition:color .3s var(--ease),background-color .3s var(--ease),transform .3s var(--ease)}
+.tab-btn:hover{color:var(--ink);background:var(--sunken)}
+.tab-btn:active{transform:scale(.98)}
+.tab-btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-ledge),0 8px 16px -4px rgba(15,118,110,.45)}
+
+/* ---- surfaces ---- */
+.card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow-2);padding:24px;margin:0 0 24px}
+.card-title{margin:0 0 16px;font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em}
+.chart-title{font-size:16px;line-height:24px;font-weight:600;margin:0 0 8px;letter-spacing:-.01em}
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* ---- form fields ---- */
+.field{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
+.field label,.field-label{font-size:14px;line-height:20px;font-weight:600;color:var(--muted)}
+.field input,.field textarea,.field select,.month-picker select,.mini-select{
+  font:inherit;padding:8px 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--raised);color:var(--ink);width:100%;min-height:44px;
+  box-shadow:0 1px 2px rgba(10,10,10,.05) inset;transition:border-color .3s var(--ease),box-shadow .3s var(--ease)}
+.mini-select{width:auto;min-height:36px;padding:4px 8px;font-size:14px}
+.field input:focus,.field textarea:focus,.field select:focus,.month-picker select:focus,.mini-select:focus{outline:none;border-color:var(--accent-bright);box-shadow:0 0 0 4px rgba(20,184,166,.18)}
+.field input[readonly]{opacity:.65}
+
+/* ---- 3D stat tiles: tilt toward the pointer (app.js sets --rx/--ry
+   and the glare position --mx/--my), lift on hover ---- */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:8px 0 24px;perspective:900px}
+.stat{position:relative;display:flex;flex-direction:column;background:var(--raised);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow-1);
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateZ(0);transform-style:preserve-3d;
+  transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
+.stat::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s var(--ease);
+  background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.55),transparent 60%)}
+.dark .stat::after{background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.08),transparent 60%)}
+.stat:hover{box-shadow:var(--shadow-3);transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-4px)}
+.stat:hover::after{opacity:1}
+.stat.tilting{transition:transform .2s var(--ease),box-shadow .5s var(--ease)}
+.stat.highlight{background:#f0fdfa;border-color:#99f6e4}
+.dark .stat.highlight{background:#042f2e;border-color:#134e4a}
+.stat-label{display:block;font-size:12px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+/* Values shrink with the tile instead of overflowing it: 12cqi fits a
+   12-character amount like "-$121,444.57"; 24px is the cap. */
+.stat{container-type:inline-size}
+.stat-value{display:block;margin-top:auto;padding-top:8px;font-size:min(24px,12cqi);line-height:1.35;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+
+/* ---- chart panels: raised, lift on hover ---- */
+.chart-panel{padding:16px;border-radius:16px;background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow-1);transition:opacity .7s var(--ease),transform .5s var(--ease),box-shadow .5s var(--ease)}
+.chart-panel:hover{transform:translateY(-4px);box-shadow:var(--shadow-3)}
+.chart-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 12px}
+.chart-head .chart-title{margin:0}
+.chart-kpi{font-size:14px;line-height:20px;font-weight:600;color:var(--muted)}
+.chart-box{position:relative;height:280px}
+.chart-box.doughnut{height:300px}
+.chart-fallback{font-size:14px;line-height:20px;color:var(--muted);padding:12px;white-space:pre-line}
+
+.storage-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:9999px;font-size:12px;line-height:16px;font-weight:600;background:rgba(251,191,36,.16);color:#fcd34d;border:1px solid rgba(251,191,36,.3)}
+.storage-badge.database{background:rgba(52,211,153,.14);color:#6ee7b7;border-color:rgba(52,211,153,.3)}
+/* Before the first API answer: neutral, and a soft pulse, so a slow load never reads as "your data is gone". */
+.storage-badge.connecting{background:rgba(255,255,255,.08);color:#d4d4d8;border-color:rgba(255,255,255,.16);animation:badgePulse 1.6s var(--ease) infinite}
+@keyframes badgePulse{50%{opacity:.55}}
+
+/* ---- buttons: a 3D "ledge" that presses down ---- */
+.toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:end;justify-content:space-between}
+.month-picker{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:600;color:var(--muted);min-width:190px;flex:1}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.actions button,.button-like,button.toggle,.btn-primary{
+  font:inherit;font-size:14px;line-height:20px;font-weight:600;cursor:pointer;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 12px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 0 var(--line-strong),0 6px 12px -6px rgba(10,10,10,.18);
+  transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .3s var(--ease),color .3s var(--ease)}
+.actions button:hover,.button-like:hover,button.toggle:hover{border-color:var(--accent-bright);color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 0 var(--line-strong),0 10px 16px -6px rgba(10,10,10,.2)}
+.actions button:active,.button-like:active,button.toggle:active,.btn-primary:active{transform:translateY(3px);box-shadow:0 0 0 var(--line-strong),0 2px 4px -2px rgba(10,10,10,.2)}
+.actions button:focus-visible,.button-like:focus-visible,button.toggle:focus-visible,.btn-primary:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.dark .actions button:hover,.dark .button-like:hover,.dark button.toggle:hover{color:var(--accent-bright)}
+.btn-primary,button.toggle.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-ledge),0 8px 16px -6px rgba(15,118,110,.55)}
+.btn-primary{font-size:16px;line-height:24px;padding:8px 16px}
+.btn-primary:hover{background:#0d9488;transform:translateY(-1px);box-shadow:0 4px 0 var(--accent-ledge),0 12px 20px -6px rgba(15,118,110,.6)}
+button.toggle.active:hover{color:#fff}
+button.danger{color:var(--neg)} button.danger:hover{border-color:var(--neg);color:var(--neg)}
+.dark button.danger:hover{color:var(--neg)}
+.btn-ghost{min-height:44px;padding:8px 12px;border-radius:12px;font-size:14px;font-weight:600;color:#fafafa;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);transition:background-color .3s var(--ease),transform .2s var(--ease)}
+.btn-ghost:hover{background:rgba(255,255,255,.16)}
+.btn-ghost:active{transform:scale(.98)}
+.btn-ghost:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+
+.hint{color:var(--muted);font-size:14px;line-height:20px;margin:12px 0}
+.month-totals{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.month-totals span{background:var(--raised);border:1px solid var(--line);border-radius:9999px;padding:4px 12px;font-size:14px;line-height:20px;font-weight:600;box-shadow:var(--shadow-1)}
+.view-toggle{display:flex;gap:8px;margin:0 0 16px}
+#monthForm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:4px 16px}
+#monthForm .wide{grid-column:1/-1}
+.group-heading{grid-column:1/-1;margin:16px 0 2px;font-size:12px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+/* ---- tables + lists ---- */
+/* Grid items default to min-width:auto, so a wide table would stretch its
+   column (and the page) instead of scrolling inside .table-scroll. */
+#compareTableWrap,.chart-panel{min-width:0}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{position:sticky;top:0;background:var(--raised);font-size:12px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+tbody tr{cursor:pointer;transition:background-color .2s var(--ease)} tbody tr:hover{background:var(--raised)} tbody tr.selected{background:rgba(20,184,166,.12)}
+/* ---- daily expenses: banking-style feed ----
+   Summary tiles on top; each day is one grouped list; a row is a
+   <details> whose <summary> is the transaction and whose body holds the
+   editing controls (date, category, card, my share, edit, delete). */
+.daily-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.sum-tile{container-type:inline-size;padding:16px;border-radius:16px;background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow-1)}
+.sum-tile:first-child{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-ledge),0 12px 24px -10px rgba(15,118,110,.55)}
+.sum-label{display:block;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.sum-tile:first-child .sum-label{color:rgba(255,255,255,.8)}
+.sum-value{display:block;margin-top:8px;font-size:min(24px,11cqi);line-height:1.3;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum-sub{display:block;margin-top:2px;font-size:14px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.sum-tile:last-child .sum-value{white-space:normal;font-size:min(18px,10cqi);line-height:1.25}
+.howto{margin:0 0 16px}
+.howto summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);list-style:none;display:inline-flex;align-items:center;gap:8px;min-height:32px}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::before{content:"i";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:9999px;border:1px solid var(--line-strong);font-size:12px;font-weight:700}
+.howto[open] .hint{margin-top:8px}
+.quick-add{padding:16px;border-radius:16px;background:var(--raised);border:1px solid var(--line);margin-bottom:8px}
+.tx-feed{margin-top:24px}
+.month-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:32px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.month-head:first-child{margin-top:8px}
+.month-total{margin:0;font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.01em}
+.month-sum{font-size:20px;line-height:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:16px 4px 8px;font-size:14px;font-weight:600;color:var(--muted)}
+.day-total{margin:0;font-size:14px;font-weight:600;color:var(--muted)}
+.tx-group{border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-1);overflow:hidden}
+.tx + .tx{border-top:1px solid var(--line)}
+.tx-main{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;list-style:none;min-height:64px;transition:background-color .3s var(--ease)}
+.tx-main::-webkit-details-marker{display:none}
+.tx-main:hover{background:var(--raised)}
+.tx-main:focus-visible{outline:2px solid var(--accent-bright);outline-offset:-2px}
+.tx[open] .tx-main{background:var(--raised)}
+.tx-badge{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;font-size:16px;font-weight:700;color:#fff;background:var(--c);
+  box-shadow:0 2px 0 rgba(0,0,0,.18),0 6px 12px -6px var(--c)}
+.tx-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tx .desc{font-weight:600;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx[open] .desc{white-space:normal}
+/* Card-feed descriptors ("SQ*STORENAME#123") have no spaces: let them
+   break anywhere rather than widen the page. */
+.tx .desc,.session-row .s-label,.card-panel-head,.chart-title{overflow-wrap:anywhere}
+.tx-sub{font-size:12px;line-height:16px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .amt{flex:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
+.amt-main{font-weight:700;font-variant-numeric:tabular-nums}
+.tx .share-sub{font-size:12px;font-weight:600;color:var(--accent)}
+.dark .tx .share-sub{color:var(--accent-bright)}
+.tx-edit{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px 16px 68px;background:var(--raised);animation:txOpen .3s var(--ease)}
+@keyframes txOpen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.tx-edit .tx-link{flex:1 1 100%;min-width:0;max-width:100%;text-overflow:ellipsis}
+.tx-edit select,.tx-edit .share-input{min-height:40px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 8px;font:inherit}
+.tx-edit .share-input{width:112px}
+.tx-edit .meta{color:var(--muted);font-size:12px;flex-basis:100%;order:9}
+.tx-edit button:not(.date-btn){min-height:40px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:border-color .3s var(--ease),color .3s var(--ease)}
+.tx-edit button:not(.date-btn):hover{border-color:var(--accent-bright);color:var(--accent)}
+.tx-edit button.danger{color:var(--neg)}
+.tx-edit button.danger:hover{border-color:var(--neg);color:var(--neg)}
+
+/* ---- dashboard Compare-with-plan switch ---- */
+.compare-toggle{margin:0 0 16px;padding:12px 16px;border:1px solid var(--line);border-radius:16px;background:var(--raised)}
+.switch-label{display:inline-flex;align-items:center;gap:12px;font-size:16px;font-weight:600;color:var(--ink);cursor:pointer;min-height:32px}
+
+/* ---- credit card statement panels ---- */
+.card-panel{border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 16px;background:var(--raised);box-shadow:var(--shadow-1);transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
+.card-panel:hover{transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.card-panel-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.card-panel table{min-width:480px}
+.card-panel tfoot td{border-top:2px solid var(--line);border-bottom:none}
+
+/* ---- calendar date picker ---- */
+.datepicker{position:relative;display:inline-block;max-width:100%}
+.field .datepicker{align-self:flex-start}
+.date-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--raised);color:var(--ink);font:inherit;font-size:16px;font-weight:600;cursor:pointer;white-space:nowrap;
+  box-shadow:0 2px 0 var(--line-strong);transition:border-color .3s var(--ease),transform .2s var(--ease),box-shadow .2s var(--ease)}
+.date-btn:hover{border-color:var(--accent-bright)}
+.date-btn:active{transform:translateY(2px);box-shadow:none}
+.date-btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:1px}
+.date-btn.row{min-height:40px;padding:4px 12px;font-size:14px;border-radius:8px;box-shadow:none}
+.date-caret{color:var(--muted);font-size:12px}
+.cal-pop{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:304px;max-width:92vw;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow-3);padding:16px;color:var(--ink);animation:calIn .3s var(--ease)}
+/* Closed calendars stay closed even if the Tailwind CDN is slow or blocked. */
+.cal-pop.hidden{display:none}
+.cal-pop.cal-flip{left:auto;right:0}
+@keyframes calIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-title{font-weight:700;font-size:16px}
+.cal-nav{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--raised);color:var(--ink);font-size:18px;cursor:pointer;line-height:1;transition:border-color .3s var(--ease)}
+.cal-nav:hover{border-color:var(--accent-bright)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{font-size:12px;font-weight:600;color:var(--muted);text-align:center;padding:4px 0}
+.cal-day{min-height:36px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer;transition:background-color .2s var(--ease),transform .2s var(--ease)}
+.cal-day:hover{background:rgba(20,184,166,.14)}
+.cal-day:active{transform:scale(.94)}
+.cal-day.dim{color:#71717a}
+.cal-day.today{border-color:var(--accent-bright);font-weight:700}
+.cal-day.sel{background:var(--accent);color:#fff;font-weight:700;box-shadow:0 2px 0 var(--accent-ledge),0 6px 12px -4px rgba(15,118,110,.5)}
+.cal-foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px}
+.cal-foot button{font:inherit;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--raised);color:var(--ink);border-radius:12px;padding:8px 12px;min-height:36px;transition:border-color .3s var(--ease)}
+.cal-foot button:hover{border-color:var(--accent-bright)}
+@media (max-width:560px){ .cal-pop{left:50%;transform:translateX(-50%);animation:calInM .3s var(--ease)} .cal-pop.cal-flip{left:50%;right:auto} @keyframes calInM{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%)}} }
+
+/* ---- sign-in gate + security ---- */
+body.auth-locked header,body.auth-locked nav,body.auth-locked main,body.auth-locked footer{display:none}
+#authGate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg);perspective:1200px}
+#authGate[hidden]{display:none}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow-3);padding:32px;width:100%;max-width:432px;animation:gateIn .7s var(--ease)}
+@keyframes gateIn{from{opacity:0;transform:rotateX(12deg) translateY(32px)}to{opacity:1;transform:none}}
+.auth-brand{font-size:14px;font-weight:700;color:var(--accent);margin:0 0 8px}
+.dark .auth-brand{color:var(--accent-bright)}
+.auth-title{font-size:24px;line-height:32px;font-weight:700;letter-spacing:-.02em;margin:0 0 8px;color:var(--ink)}
+.auth-error{color:var(--neg);font-size:14px;font-weight:600;margin:4px 0 12px}
+#pairCard{border:1px solid #f59e0b;border-radius:16px;padding:8px 16px 16px;margin-top:24px;background:#fffbeb}
+#pairCard .chart-title{margin-top:12px}
+.dark #pairCard{background:#1f1f1f;border-color:#92400e}
+.session-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.session-row .s-label{flex:1 1 170px;font-weight:600}
+.session-row .s-meta{color:var(--muted);font-size:14px;flex-basis:100%}
+.session-row button{min-height:36px;padding:4px 12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:8px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:border-color .3s var(--ease),color .3s var(--ease)}
+.session-row button:hover{border-color:var(--neg);color:var(--neg)}
+.kind-badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:600;background:#ccfbf1;color:#0f766e;margin-left:8px;vertical-align:middle}
+.kind-badge.sync{background:#fef3c7;color:#92400e}
+.kind-badge.mcp{background:#ede9fe;color:#6d28d9}
+.dark .kind-badge{background:#042f2e;color:#5eead4}
+.dark .kind-badge.sync{background:#451a03;color:#fcd34d}
+.dark .kind-badge.mcp{background:#2e1065;color:#c4b5fd}
+.pair-fp{font-family:ui-monospace,Menlo,monospace;font-size:16px;letter-spacing:.08em;background:#ccfbf1;color:#0f766e;padding:2px 8px;border-radius:4px}
+.dark .pair-fp{background:#042f2e;color:#5eead4}
+#pairOpenStatus{font-weight:600}
+
+/* ---- iPhone / touch ----
+   Notch and home indicator: header and bottom bar pad by the safe-area
+   insets (viewport-fit=cover). Phones get a fixed bottom tab bar with
+   icons, a floating Add expense button above it, tighter cards, and
+   16px form text so iOS Safari doesn't zoom in on focus. */
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+header{padding-top:env(safe-area-inset-top)}
+@media (max-width:640px){
+  body{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+  .nav-float{position:fixed;top:auto;left:12px;right:12px;bottom:calc(8px + env(safe-area-inset-bottom));margin:0;width:auto;max-width:none;
+    flex-wrap:nowrap;justify-content:space-between;gap:0;padding:4px;border-radius:24px}
+  .tab-btn{flex:1 1 0;min-width:0;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;border-radius:20px;font-size:12px;line-height:16px}
+  .tab-btn.active{box-shadow:0 2px 0 var(--accent-ledge),0 6px 12px -4px rgba(15,118,110,.45)}
+  .tab-ico{display:block}
+  .lbl-long{display:none} .lbl-short{display:inline}
+  header{position:relative}
+  #themeToggle{position:absolute;top:calc(env(safe-area-inset-top) + 24px);right:16px}
+  .app-title{padding-right:72px}
+  /* Dashboard: numbers and charts first; the set-once baseline fields
+     move to the end of the card. */
+  #addExpenseTopBtn{position:fixed;z-index:45;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:56px;height:56px;padding:0;border-radius:9999px}
+  #addExpenseTopBtn .fab-label{display:none}
+  body[data-tab="daily"] #addExpenseTopBtn{display:none}
+  #addExpenseTopBtn .fab-plus{font-size:30px;line-height:1;font-weight:500;margin-top:-2px}
+  main{padding-top:16px}
+  .card{padding:16px;border-radius:20px;margin-bottom:16px}
+  .card-title{font-size:20px;line-height:28px}
+  .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stat{padding:12px;border-radius:16px}
+  .stat-value{font-size:min(20px,12cqi);padding-top:4px}
+  .stat-label{font-size:11px;letter-spacing:.04em}
+  .chart-panel{padding:12px}
+  .chart-box{height:240px}
+  .chart-box.doughnut{height:320px}
+  .mini-select,.tx-edit select,.tx-edit .share-input,.cal-foot button{font-size:16px}
+  .actions button,.button-like,button.toggle{flex:1 1 auto}
+  .toolbar .actions{width:100%}
+  .daily-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sum-tile{padding:12px}
+  .tx-main{padding:12px}
+  .tx-edit{padding:12px}
+  .tx-edit select{flex:1 1 140px}
+  .card-panel table{min-width:0}
+  .card-panel .col-cat{display:none}
+  .card-panel .col-desc{white-space:normal;overflow-wrap:anywhere}
+  .card-panel table{font-size:14px}
+  .card-panel th,.card-panel td{padding:8px 6px}
+  .card-panel td:first-child{white-space:normal}
+  .cal-pop{position:fixed;top:auto;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-width:none;transform:none;animation:calSheet .5s var(--ease)}
+  .cal-pop.cal-flip{left:8px;right:8px}
+  .cal-day{min-height:44px}
+}
+@keyframes calSheet{from{transform:translateY(100%)}to{transform:none}}
+/* Touch screens have no hover: keep lifts and tilts from sticking after a tap. */
+@media (hover:none){
+  .stat:hover,.chart-panel:hover,.card-panel:hover{transform:none;box-shadow:var(--shadow-1)}
+  .actions button:hover,.button-like:hover,button.toggle:hover,.btn-primary:hover{transform:none}
+  .stat:hover::after{opacity:0}
+}
+
+/* Reduced motion: no movement, no tilt — colour/opacity changes only. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition-property:opacity,color,background-color,border-color !important}
+  .reveal{transform:none}
+  .stat,.stat:hover,.chart-panel:hover,.card-panel:hover{transform:none}
+}
+/* ---- dashboard month switcher (drives the category + daily charts) ---- */
+.month-switch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border-radius:16px;background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow-1)}
+.ms-nav{width:44px;height:44px;flex:none;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;
+  box-shadow:0 2px 0 var(--line-strong);transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .3s var(--ease)}
+.ms-nav:hover:not(:disabled){border-color:var(--accent-bright)}
+.ms-nav:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.ms-nav:disabled{opacity:.35;cursor:default}
+.ms-nav:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.ms-select{min-height:44px;flex:0 1 180px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;font-weight:700}
+.ms-stat{flex:1 1 160px;display:flex;flex-direction:column;justify-content:center;min-height:44px;padding:4px 12px;border-left:1px solid var(--line)}
+.ms-stat-label{font-size:12px;line-height:16px;font-weight:600;color:var(--muted)}
+.ms-stat-value{font-size:20px;line-height:28px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.ms-stat-sub{font-size:12px;line-height:16px;font-weight:600;color:var(--muted);white-space:nowrap}
+.pending-section{margin:0 0 16px;padding:14px 16px;border:1px dashed var(--line);border-radius:12px}
+.pending-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.pending-title{font-size:14px;font-weight:700;margin:0}
+.pending-meta{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
+.pending-note{font-size:12px;color:var(--muted);margin:4px 0 6px}
+.pending-list{display:flex;flex-direction:column}
+.pending-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.pending-main{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+.pending-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pending-sub{font-size:12px;color:var(--muted)}
+.pending-badge{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.pending-amount{flex:0 0 auto;font-weight:700;white-space:nowrap}
+.sync-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+.sync-btn{font-size:14px;line-height:20px;padding:8px 14px}
+.sync-btn:disabled{opacity:.65;cursor:wait;transform:none}
+.sync-status{font-size:14px;color:var(--muted);font-weight:600}
+@media (max-width:640px){ .ms-select{flex:1 1 auto} .ms-stat{flex-basis:40%;border-left:0;padding:4px} .ms-stat + .ms-stat{border-left:1px solid var(--line);padding-left:12px} }
+
+/* ---- Daily review list, badge and banner ---- */
+.baseline-fixed{margin:0;min-height:44px;display:flex;align-items:center;font-size:16px;font-weight:600}
+.tab-btn{position:relative}
+.tab-badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:9999px;background:var(--neg);color:#fff;font-size:11px;line-height:1;font-weight:700}
+.tab-badge[hidden]{display:none}
+@media (max-width:640px){ .tab-badge{position:absolute;top:4px;right:calc(50% - 22px);margin:0} }
+.review-banner{display:block;width:100%;margin:0 0 16px;padding:12px 16px;border-radius:16px;border:1px solid var(--accent-bright);background:var(--raised);color:var(--ink);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer}
+.review-box{margin:0 0 16px;padding:16px;border-radius:16px;border:1px solid var(--accent-bright);background:var(--raised);box-shadow:var(--shadow-1)}
+.review-item{padding:12px 0;border-top:1px solid var(--line)}
+.review-item:first-of-type{border-top:0}
+.ri-main{display:flex;align-items:center;gap:12px}
+.ri-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.ri-text .desc{overflow-wrap:anywhere;font-weight:600}
+.ri-main .amt{font-weight:700;white-space:nowrap}
+.ri-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ri-actions button,.ri-actions select,.ri-undo{min-height:40px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ri-actions button.primary{border-color:var(--accent-bright)}
+.ri-actions select{flex:1 1 100%;min-width:0;order:3}
+.ri-undo{margin-bottom:8px}
+@media (max-width:640px){ .ri-actions select{font-size:16px} }
+.ignore-rules{margin:16px 0;padding:12px 16px;border:1px solid var(--line);border-radius:16px;background:var(--raised)}
+.rule-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.rule-row span{min-width:0;overflow-wrap:anywhere}
+.rule-row button{flex:none;min-height:40px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+
+/* ---- Transactions popup (chart taps). Phones: a bottom sheet. ---- */
+.tx-dialog{width:min(560px,calc(100vw - 32px));max-height:80vh;padding:0;border:1px solid var(--line);border-radius:24px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-3);overflow:hidden}
+.tx-dialog[open]{display:flex;flex-direction:column;animation:calIn .3s var(--ease)}
+.tx-dialog::backdrop{background:rgba(0,0,0,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+body:has(.tx-dialog[open]){overflow:hidden}
+.txd-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 8px}
+.txd-head .hint{margin:4px 0 0}
+.txd-close{flex:none;width:44px;height:44px;border-radius:9999px;border:1px solid var(--line-strong);background:var(--raised);color:var(--ink);font-size:24px;line-height:1;cursor:pointer}
+.txd-list{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 16px 16px}
+.txd-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.txd-row .tx-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.txd-row .desc{overflow-wrap:anywhere;font-weight:600}
+.txd-row .amt{display:flex;flex-direction:column;align-items:flex-end;font-weight:700;white-space:nowrap}
+@media (max-width:640px){
+  .tx-dialog{width:100vw;max-width:100vw;max-height:85vh;margin:auto 0 0;border-radius:24px 24px 0 0;border-bottom:0}
+  .txd-list{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+.pending-count{flex:0 0 auto;min-height:36px;padding:4px 10px;border:1px solid var(--accent-bright);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pending-count:disabled{opacity:.5;cursor:default}
+.pending-badge.counted{color:var(--pos);border-color:currentColor}
+.pending-flag-head{margin-top:12px}
+@media (max-width:640px){ .pending-row{flex-wrap:wrap} .pending-main{flex-basis:100%} .pending-row .pending-amount{margin-left:auto} }
+
+/* ---- Ask about your budget ---- */
+.ask-log{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;margin:0 0 12px;padding:4px}
+.ask-msg{max-width:88%;padding:10px 14px;border-radius:16px;font-size:15px;line-height:22px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ask-msg.user{align-self:flex-end;background:var(--accent-bright);color:#fff;border-bottom-right-radius:4px}
+.ask-msg.assistant{align-self:flex-start;background:var(--raised);border:1px solid var(--line);border-bottom-left-radius:4px}
+.ask-msg.thinking{color:var(--muted);font-style:italic}
+.ask-msg.note{align-self:flex-start;background:transparent;border:1px dashed var(--line-strong);color:var(--muted)}
+.ask-facts{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:13px;line-height:18px;color:var(--muted)}
+.ask-clear{display:block;margin:-4px 0 12px auto;min-height:36px;padding:4px 12px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.ask-clear[hidden]{display:none}
+.ask-suggest{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.ask-suggest button{min-height:36px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:9999px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.ask-form{display:flex;gap:8px}
+.ask-form input{flex:1;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px}
+.ask-form button{flex:none}
+.tx-note{display:block;margin-top:2px;font-size:13px;line-height:18px;color:var(--muted);font-style:italic;overflow-wrap:anywhere}
+.tx-edit .note-input{flex:1 1 100%;min-width:0;min-height:40px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 8px;font:inherit}
+@media (max-width:640px){ .tx-edit .note-input{font-size:16px} }
+.stat-sub{display:block;margin-top:4px;font-size:13px;line-height:18px;font-weight:600}
+.stat-sub[hidden]{display:none}
+.pace-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+@media (min-width:768px){.pace-list{grid-template-columns:1fr 1fr;column-gap:24px}}
+.pace-head{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:22px;font-weight:600}
+.pace-nums{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500;white-space:nowrap}
+.pace-bar{display:block;position:relative;height:10px;margin:6px 0 4px;border-radius:9999px;background:var(--line)}
+.pace-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--pos)}
+.pace-row.ahead .pace-fill{background:#d97706}
+.pace-row.over .pace-fill{background:var(--neg)}
+.pace-mark,.pace-mark-key{position:absolute;top:-3px;width:2px;height:16px;margin-left:-1px;background:var(--ink);border-radius:1px}
+.pace-mark-key{position:relative;display:inline-block;top:3px;margin:0 4px 0 0}
+.pace-sub{display:block;font-size:13px;line-height:18px;color:var(--muted)}
+.pace-row.ahead .pace-sub{color:#b45309}
+.pace-row.over .pace-sub{color:var(--neg)}
+.pace-key{margin:12px 0 0;font-size:12px;color:var(--muted)}
+.tx-edit .merchant-rule{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%;align-items:center}
+.merchant-rules{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:8px;max-width:42rem}
+.merchant-rules li{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.merchant-rules li.hint{display:block;margin:0}
+.pace-btn{display:block;width:100%;margin:-6px;padding:6px;border:0;border-radius:10px;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;box-sizing:content-box}
+.pace-btn:hover{background:var(--surface)}
+.pace-btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:0}
+
+/* ================= v2 screens (Accounts, Transactions, Cash flow,
+   Budget, Recurring, Goals, Overview, Settings additions) =================
+   Same tokens as the rest of the app. Money in is green (--pos), money
+   out keeps the ink colour; over-budget and losses use --neg. */
+.nav-float .tab-btn{padding:8px 12px}
+/* The classic screens live in the More sheet, not the bar (phones keep Daily in the bar, below). */
+.nav-float .tab-btn.classic,.nav-sep{display:none}
+.nav-sep{align-self:center;padding:0 8px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-left:1px solid var(--line-strong);margin-left:4px}
+.v2-card-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:0 0 16px}
+.v2-card-head .card-title{margin:0}
+.v2-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 16px}
+.v2-tile{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow-1);text-align:left;font:inherit;color:inherit}
+button.v2-tile{cursor:pointer;transition:transform .2s var(--ease),border-color .3s var(--ease)}
+button.v2-tile:hover{transform:translateY(-2px);border-color:var(--accent-bright)}
+button.v2-tile:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.v2-tile-label{font-size:13px;line-height:18px;font-weight:600;color:var(--muted)}
+.v2-tile-value{font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.02em}
+.v2-tile-sub{font-size:13px;line-height:18px;color:var(--muted)}
+.v2-tile.accent{border-color:rgba(20,184,166,.45);background:linear-gradient(0deg,rgba(20,184,166,.08),rgba(20,184,166,.08)),var(--raised)}
+.v2-tile.neg .v2-tile-value{color:var(--neg)}
+.v2-tile.warn{border-color:rgba(245,158,11,.5)}
+.v2-mini{font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:6px 12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .3s var(--ease),color .3s var(--ease)}
+.v2-mini:hover{border-color:var(--accent-bright);color:var(--accent)}
+.v2-mini:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.v2-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.v2-filters input,.v2-filters select,.v2-budget-tools select,.v2-form input,.v2-form select,.v2-form textarea,.v2-split-row input,.v2-split-row select{font:inherit;font-size:15px;min-height:40px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink)}
+.v2-filters input:focus,.v2-filters select:focus,.v2-form input:focus,.v2-form select:focus,.v2-form textarea:focus,.v2-plan-input:focus{outline:none;border-color:var(--accent-bright);box-shadow:0 0 0 4px rgba(20,184,166,.18)}
+.v2-search{flex:1 1 220px}
+.v2-count{margin:4px 0 8px}
+.v2-check{font-size:14px;font-weight:600;min-height:40px}
+.v2-day-head{position:sticky;top:0;z-index:1;margin:16px 0 4px;padding:4px 0;font-size:13px;line-height:18px;font-weight:600;color:var(--muted);background:var(--surface)}
+.v2-tx,.v2-line-btn,.v2-acct-main,.v2-goal{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;background:transparent;border:0}
+.v2-tx{display:flex;gap:12px;align-items:center;justify-content:space-between;min-height:56px;padding:10px 8px;border-radius:12px;border-bottom:1px solid var(--line)}
+.v2-tx:hover,.v2-line-btn:hover,.v2-acct-main:hover{background:var(--sunken)}
+.v2-tx:focus-visible,.v2-line-btn:focus-visible,.v2-acct-main:focus-visible,.v2-goal:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.v2-tx.review{box-shadow:inset 3px 0 0 #f59e0b}
+.v2-tx.excluded{opacity:.6}
+.v2-tx-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.v2-tx-merchant{font-size:15px;line-height:20px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2-tx-sub{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;line-height:16px;color:var(--muted)}
+.v2-tx-note{font-style:italic}
+.v2-tx-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.v2-tx-share{font-size:12px;color:var(--muted)}
+.v2-amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.v2-amt.in{color:var(--pos)}
+.v2-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:12px;line-height:16px;font-weight:600;background:rgba(20,184,166,.12);color:var(--accent);border:1px solid rgba(20,184,166,.25)}
+.dark .v2-chip{color:var(--accent-bright)}
+.v2-chip.warn{background:rgba(245,158,11,.14);color:#b45309;border-color:rgba(245,158,11,.35)}
+.dark .v2-chip.warn{color:#fcd34d}
+.v2-chip.muted{background:var(--sunken);color:var(--muted);border-color:var(--line)}
+.v2-avg{cursor:pointer;font:inherit;font-size:12px;font-weight:600}
+.v2-chip.big{font-size:14px;line-height:20px;padding:6px 12px;cursor:pointer;font-family:inherit}
+.v2-chips{display:flex;flex-wrap:wrap;gap:8px}
+.v2-tag{color:var(--accent)}
+.v2-more{justify-content:center;margin-top:12px}
+.v2-group{margin:0 0 20px}
+.v2-group-head{display:flex;gap:12px;align-items:baseline;justify-content:space-between;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.v2-group-head h3{margin:0;font-size:15px;line-height:20px;font-weight:700}
+.v2-group-total{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.v2-acct{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+.v2-acct-main{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;padding:10px 8px;border-radius:12px}
+.v2-acct-name{font-weight:600}
+.v2-acct-bal{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.v2-acct-bal.owed{color:var(--neg)}
+.v2-acct.hidden-acct{opacity:.6}
+.v2-chart{height:240px;margin:0 0 16px}
+.v2-bar{position:relative;display:block;height:8px;border-radius:9999px;background:var(--sunken);border:1px solid var(--line);overflow:hidden;min-width:60px}
+.v2-bar.big{height:12px;margin:8px 0}
+.v2-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:9999px;background:var(--accent-bright);transition:width .4s var(--ease)}
+.v2-bar.over .v2-bar-fill{background:var(--neg)}
+.v2-bar.income .v2-bar-fill{background:var(--pos)}
+.v2-month-nav{display:flex;gap:12px;align-items:center;justify-content:center;margin:0 0 16px;font-size:18px}
+.v2-budget-row{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(80px,1fr) auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.v2-budget-name{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:600}
+.v2-budget-nums{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.v2-budget-actual{font-weight:700}
+.v2-plan-input{width:96px;font:inherit;font-size:15px;min-height:36px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--ink);text-align:right}
+.v2-budget-left{font-size:13px;color:var(--muted);min-width:84px;text-align:right}
+.v2-budget-left.neg{color:var(--neg);font-weight:600}
+.v2-roll{display:inline-flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+.v2-budget-tools select{min-height:36px;font-size:14px}
+.v2-budget-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.v2-sub-head{margin:16px 0 8px;font-size:15px;line-height:20px;font-weight:700}
+.v2-cat-table{display:flex;flex-direction:column;gap:6px}
+.v2-cat-row{display:grid;grid-template-columns:minmax(120px,1fr) 2fr auto 44px;gap:12px;align-items:center}
+.v2-cat-amt{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.v2-cat-pct{margin:0;text-align:right}
+.v2-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.v2-table th,.v2-table td{padding:8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.v2-table th:first-child,.v2-table td:first-child{text-align:left}
+.v2-table th{font-size:12px;color:var(--muted);font-weight:600}
+.v2-table .neg{color:var(--neg)} .v2-table .pos{color:var(--pos)}
+.v2-list{display:flex;flex-direction:column}
+.v2-line{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;min-height:48px;padding:8px;border-bottom:1px solid var(--line);border-radius:12px}
+.v2-line-date{min-width:56px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.v2-line-name{flex:1 1 140px;font-weight:600;min-width:0}
+.v2-two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.v2-goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.v2-goal{display:flex;flex-direction:column;padding:16px;border-radius:16px;background:var(--raised);border:1px solid var(--line);box-shadow:var(--shadow-1)}
+.v2-goal:hover{border-color:var(--accent-bright)}
+.v2-goal-head{display:flex;justify-content:space-between;gap:8px}
+.v2-goal-name{font-weight:700;font-size:16px}
+.v2-goal-nums{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.v2-goal .hint{margin:8px 0 0}
+.v2-form{display:flex;flex-direction:column;gap:4px}
+.v2-form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.v2-form textarea{min-height:64px;resize:vertical}
+.v2-field-hint{margin:0}
+.v2-splits{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px dashed var(--line-strong);border-radius:12px}
+.v2-split-row{display:grid;grid-template-columns:1fr 110px auto;gap:8px}
+.v2-dialog-body{padding:16px 24px;overflow-y:auto}
+.v2-dialog-actions{padding:12px 24px 20px;border-top:1px solid var(--line)}
+.v2-dialog-status{min-height:20px;margin:8px 0 0;font-size:14px;font-weight:600}
+.v2-dialog-status.err{color:var(--neg)}
+.v2-empty{text-align:center;padding:24px 8px}
+.v2-ok{color:var(--pos);font-weight:600}
+@media (max-width:640px){
+  /* More tabs than fit: the bottom bar scrolls sideways (its own strip only). */
+  .nav-float{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;justify-content:flex-start}
+  .nav-float::-webkit-scrollbar{display:none}
+  .nav-float .tab-btn{flex:0 0 68px}
+  .nav-sep{display:none}
+  .v2-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .v2-tile{padding:12px}
+  .v2-tile-value{font-size:20px;line-height:26px}
+  .v2-two{grid-template-columns:1fr}
+  .v2-budget-row{grid-template-columns:1fr;gap:6px}
+  .v2-budget-nums{justify-content:flex-start}
+  .v2-cat-row{grid-template-columns:1fr auto;gap:4px 12px}
+  .v2-cat-row .v2-bar{grid-column:1 / -1;order:3}
+  .v2-cat-pct{display:none}
+  .v2-filters > *{flex:1 1 140px}
+  .v2-dialog-body{padding:12px 16px}
+  .v2-dialog-actions{padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+}
+
+/* Auto-review: rows Gemini checked, and the "Mark all reviewed" bar */
+.v2-chip.ai{background:rgba(99,102,241,.12);color:#4f46e5;border-color:rgba(99,102,241,.35)}
+.dark .v2-chip.ai{color:#a5b4fc}
+.v2-tile.ai .v2-tile-value{color:#4f46e5}
+.dark .v2-tile.ai .v2-tile-value{color:#a5b4fc}
+.v2-bulk{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--sunken)}
+.v2-import-preview{display:grid;gap:6px}
+.v2-import-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.v2-import-date{color:var(--muted);white-space:nowrap}
+.v2-import-desc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2-steps{margin:0;padding-left:20px;display:grid;gap:4px}
+.v2-ai-note{margin:0;padding:10px 12px;border-radius:12px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);font-size:14px}
+
+/* ---- iOS-style polish (lists, headers, tab bar, pager) ----
+   Patterns from the best iPhone finance apps: compact one-line
+   transaction rows in inset grouped lists, small uppercase day headers
+   with the day's total, one hero number per screen, a tab bar that
+   tints the active item instead of filling it, and instant press
+   feedback. */
+
+/* Transaction rows: denser, rounded-square category chip, press state. */
+.tx-main{min-height:56px;padding:10px 16px;gap:12px}
+.tx-main:active{background:var(--sunken);transition:none}
+.tx-badge{width:36px;height:36px;border-radius:10px;font-size:15px}
+.tx .desc{font-size:15px;letter-spacing:-.005em}
+.amt-main{font-size:15px;letter-spacing:-.01em}
+.tx-group > .tx + .tx{position:relative;border-top:0}
+.tx-group > .tx + .tx::before{content:"";position:absolute;top:0;left:64px;right:0;border-top:1px solid var(--line)}
+.tx-group{border-radius:14px}
+
+/* Section headers: month as a large title, days as small caps with the total. */
+.month-head{border-bottom:0;margin:32px 4px 4px;padding:0}
+.month-total{font-size:22px;line-height:28px;letter-spacing:-.02em}
+.month-sum{font-size:17px;line-height:28px;font-weight:600;color:var(--muted)}
+.day-head{margin:20px 4px 6px;font-size:12px;line-height:16px;letter-spacing:.06em;text-transform:uppercase}
+.day-head h4{margin:0;font:inherit}
+.v2-day-head{font-size:12px;line-height:16px;letter-spacing:.06em;text-transform:uppercase}
+.v2-tx:active{background:var(--sunken);transition:none}
+
+/* Daily summary: the month's spend is the hero number. */
+.daily-summary{grid-template-columns:2fr 1fr 1fr 1fr}
+.sum-tile:first-child .sum-value{font-size:min(34px,14cqi);line-height:1.15;letter-spacing:-.03em}
+
+/* Pager */
+.pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;margin:24px 0 8px}
+.pager-btn{min-width:40px;height:40px;padding:0 10px;border-radius:9999px;border:1px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;
+  transition:background-color .2s var(--ease),transform .1s ease-out}
+.pager-btn:hover:not(:disabled){background:var(--sunken)}
+.pager-btn:active:not(:disabled){transform:scale(.94)}
+.pager-btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.pager-btn:disabled{color:var(--muted);opacity:.45;cursor:default}
+.pager-btn.current{background:var(--accent);color:#fff;opacity:1}
+.pager-gap{min-width:24px;text-align:center;color:var(--muted)}
+.pager-label{flex-basis:100%;text-align:center;margin-top:4px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+
+@media (max-width:640px){
+  /* Compact header: title + status, no tagline, so content starts higher. */
+  header > div{padding-top:16px;padding-bottom:16px}
+  header .app-title + p{display:none}
+  .storage-badge{padding:2px 10px;font-size:11px}
+  #themeToggle{top:calc(env(safe-area-inset-top) + 14px);min-height:36px;padding:4px 10px}
+  main{padding-top:12px}
+  .tab-btn:active{transform:scale(.94);transition:transform .1s ease-out}
+  .daily-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sum-tile:first-child,.sum-tile:last-child{grid-column:1 / -1}
+  .sum-tile:first-child .sum-value{font-size:34px}
+  .tx-main{padding:10px 12px}
+  .tx-group > .tx + .tx::before{left:60px}
+  .month-head{margin-top:24px}
+  .pager-btn{min-width:44px;height:44px}
+}
+@media (prefers-reduced-transparency: reduce){
+  .nav-float{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@media (prefers-contrast: more){
+  .nav-float{background:var(--surface);border-color:var(--ink)}
+  .tx-group,.card{border-color:var(--line-strong)}
+}
+
+/* ==== Apple system ====
+   iOS Human Interface Guidelines, applied as one layer over everything
+   above: the system font (SF Pro on Apple devices), the grouped
+   background and label/separator colors, a Large Title header on the
+   page background, flat inset cards, tinted and filled buttons that dim
+   on press, a segmented control for the desktop tabs and a translucent
+   tab bar on phones. Teal stays the app's one tint color. */
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --raised:#f2f2f7; --sunken:#e5e5ea;
+  --ink:#000000; --muted:#6c6c70; --line:#e5e5ea; --line-strong:#d1d1d6;
+  --accent:#0f766e; --accent-bright:#0d9488; --accent-tint:rgba(15,118,110,.12);
+  --pos:#248a3d; --neg:#d70015; --fill:rgba(118,118,128,.12);
+  --shadow-1:none; --shadow-2:none;
+  --shadow-3:0 10px 40px rgba(0,0,0,.18);
+}
+.dark{
+  --bg:#000000; --surface:#1c1c1e; --raised:#2c2c2e; --sunken:#3a3a3c;
+  --ink:#ffffff; --muted:#98989f; --line:#38383a; --line-strong:#48484a;
+  --accent:#0d9488; --accent-bright:#2dd4bf; --accent-tint:rgba(45,212,191,.16);
+  --pos:#30d158; --neg:#ff453a; --fill:rgba(118,118,128,.24);
+  --shadow-3:0 10px 40px rgba(0,0,0,.6);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.006em}
+
+/* Large Title header */
+.app-header{background:var(--bg);color:var(--ink)}
+.app-title{background:none;color:var(--ink);-webkit-text-fill-color:currentColor;margin:0;font-size:40px;line-height:48px;font-weight:700;letter-spacing:-.02em}
+.app-sub{margin:2px 0 0;font-size:17px;line-height:22px;color:var(--muted)}
+.app-sub2{margin:4px 0 0;font-size:15px;line-height:20px;color:var(--muted)}
+#headerBaseline{color:var(--ink);font-weight:600}
+.storage-badge{border:0;background:rgba(255,149,0,.14);color:#c93400;font-weight:600}
+.storage-badge.database{background:rgba(52,199,89,.15);color:#248a3d}
+.storage-badge.connecting{background:var(--fill);color:var(--muted)}
+.dark .storage-badge{color:#ffb340} .dark .storage-badge.database{color:#30d158} .dark .storage-badge.connecting{color:var(--muted)}
+.btn-ghost{background:var(--fill);color:var(--ink);border:0;border-radius:9999px}
+.btn-ghost:hover{background:var(--sunken)}
+.icon-btn{width:40px;height:40px;min-height:40px;padding:0;display:inline-grid;place-items:center}
+.icon-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+/* Surfaces: flat inset groups */
+.card{border:0;border-radius:16px;box-shadow:none}
+.card-title{font-size:22px;line-height:28px;letter-spacing:-.015em}
+.stat,.sum-tile,.chart-panel,.card-panel,.v2-tile{border:0;box-shadow:none;border-radius:12px;background:var(--raised)}
+.stat,.stat:hover{transform:none!important}
+.stat::after{display:none}
+.chart-panel:hover,.card-panel:hover,.stat:hover{transform:none;box-shadow:none}
+.sum-tile:first-child{box-shadow:none}
+.tx-group{border:1px solid var(--line);border-radius:12px;box-shadow:none}
+.tx-badge{width:36px;height:36px;border-radius:9px;box-shadow:none}
+.tx-main:hover,.tx[open] .tx-main{background:var(--raised)}
+
+/* Buttons: tinted (secondary) and filled (primary); they dim on press. */
+.actions button,.button-like,button.toggle{background:var(--accent-tint);color:var(--accent);border:0;border-radius:12px;box-shadow:none;font-weight:600}
+.dark .actions button,.dark .button-like,.dark button.toggle{color:var(--accent-bright)}
+.actions button:hover,.button-like:hover,button.toggle:hover{background:var(--accent-tint);color:var(--accent);transform:none;box-shadow:none;filter:brightness(.96)}
+.dark .actions button:hover,.dark .button-like:hover,.dark button.toggle:hover{color:var(--accent-bright);filter:brightness(1.15)}
+.btn-primary,button.toggle.active,.dark button.toggle.active{background:var(--accent);color:#fff;border:0;border-radius:12px;box-shadow:none}
+.btn-primary:hover{background:var(--accent);transform:none;box-shadow:none;filter:brightness(1.08)}
+button.danger,.actions button.danger{background:rgba(255,59,48,.12);color:var(--neg)}
+.actions button:active,.button-like:active,button.toggle:active,.btn-primary:active,.btn-ghost:active,.pager-btn:active:not(:disabled){transform:none;box-shadow:none;opacity:.6;transition:none}
+.tx-edit button:not(.date-btn){border:0;background:var(--fill);border-radius:10px}
+.tx-edit button.danger{background:rgba(255,59,48,.12)}
+
+/* Inputs: filled, borderless, accent focus ring */
+.field input,.field textarea,.field select,.month-picker select,.mini-select,.tx-edit select,.tx-edit .share-input,.tx-edit .note-input{border:1px solid transparent;background:var(--fill);border-radius:10px;box-shadow:none}
+.field input:focus,.field textarea:focus,.field select:focus,.month-picker select:focus,.mini-select:focus{border-color:var(--accent-bright);box-shadow:0 0 0 3px var(--accent-tint)}
+.cal-day.sel{box-shadow:none}
+
+/* Desktop tabs: an iOS segmented control */
+.nav-float{background:rgba(242,242,247,.8);border:0;box-shadow:0 1px 0 var(--line),0 8px 24px -12px rgba(0,0,0,.18);border-radius:12px;padding:3px;gap:2px}
+.dark .nav-float{background:rgba(28,28,30,.8)}
+.nav-float .tab-btn{border-radius:9px;color:var(--ink);font-weight:500;padding:6px 14px}
+.nav-float .tab-btn:hover{background:var(--fill)}
+.nav-float .tab-btn.active{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
+.dark .nav-float .tab-btn.active{background:#636366;color:#fff}
+.nav-sep{color:var(--muted)}
+
+@media (max-width:640px){
+  .app-title{font-size:34px;line-height:41px}
+  header > div{padding-top:12px;padding-bottom:8px}
+  /* Tab bar: full width, translucent material, tint marks the current tab. */
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  .nav-float{left:0;right:0;bottom:0;border-radius:0;padding:4px 4px env(safe-area-inset-bottom);gap:0;
+    background:rgba(249,249,249,.88);box-shadow:0 -0.5px 0 rgba(0,0,0,.25);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8)}
+  .dark .nav-float{background:rgba(22,22,24,.88);box-shadow:0 -0.5px 0 rgba(255,255,255,.15)}
+  .nav-float .tab-btn,.nav-float .tab-btn:hover{min-height:49px;padding:4px 0 2px;border-radius:0;background:transparent;color:#8e8e93;font-size:10px;line-height:12px;font-weight:500;letter-spacing:.01em}
+  .nav-float .tab-btn.active,.dark .nav-float .tab-btn.active{background:transparent;color:var(--accent);box-shadow:none}
+  .dark .nav-float .tab-btn.active{color:var(--accent-bright)}
+  .nav-float .tab-ico{width:25px;height:25px}
+  .nav-float .tab-btn:active{opacity:.6;transform:none}
+  #themeToggle{top:calc(env(safe-area-inset-top) + 16px);width:36px;height:36px;min-height:36px;padding:0}
+  #addExpenseTopBtn{bottom:calc(72px + env(safe-area-inset-bottom));box-shadow:0 6px 16px rgba(0,0,0,.2)}
+  .card{border-radius:12px}
+  .sum-tile:first-child .sum-value{font-size:34px}
+}
+@media (prefers-reduced-transparency: reduce){
+  .nav-float,.dark .nav-float{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+
+/* ---- iOS switches: every checkbox in the app is an on/off setting ----
+   51×31 track, 27px knob with the system shadow, systemGreen when on.
+   The knob stretches while pressed and slides on a critically damped
+   curve; the track color crossfades. */
+input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:51px!important;height:31px;min-height:31px;margin:0;padding:0;border:0;border-radius:9999px;
+  background:rgba(120,120,128,.16);cursor:pointer;vertical-align:middle;box-shadow:none;transition:background-color .25s ease}
+.dark input[type="checkbox"]{background:rgba(120,120,128,.36)}
+input[type="checkbox"]::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:9999px;background:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.15),0 3px 1px rgba(0,0,0,.06);transition:transform .35s cubic-bezier(.3,1,.4,1),width .2s cubic-bezier(.3,1,.4,1)}
+input[type="checkbox"]:checked,.dark input[type="checkbox"]:checked{background:#34c759}
+.dark input[type="checkbox"]:checked{background:#30d158}
+input[type="checkbox"]:checked::after{transform:translateX(20px)}
+input[type="checkbox"]:active:not(:disabled)::after{width:34px}
+input[type="checkbox"]:checked:active:not(:disabled)::after{transform:translateX(13px)}
+input[type="checkbox"]:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+input[type="checkbox"]:disabled{opacity:.5;cursor:default}
+.switch-label{gap:12px}
+.compare-toggle{border:0;border-radius:12px}
+
+/* ---- More tab + sheet ---- */
+.more-tab{display:inline-flex;align-items:center;padding:8px 12px;border:0;border-radius:9999px;background:transparent;color:var(--muted);font:inherit;font-size:14px;line-height:20px;font-weight:600;cursor:pointer}
+.more-tab:hover{color:var(--ink);background:var(--sunken)}
+.more-tab.active{color:var(--accent)} .dark .more-tab.active{color:var(--accent-bright)}
+/* Wide screens already show every Money tab in the bar: the sheet lists only the classic ones. */
+@media (min-width:641px){ .more-sheet .sheet-money{display:none} }
+.more-sheet{position:fixed;inset:auto 0 0 0;margin:0;width:100%;max-width:640px;margin-inline:auto;max-height:85vh;padding:0;border:0;border-radius:14px 14px 0 0;
+  background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.2);overflow:hidden;transition:transform .45s cubic-bezier(.3,1,.4,1)}
+.more-sheet[open]{display:flex;flex-direction:column;animation:sheetUp .45s cubic-bezier(.3,1,.4,1)}
+.more-sheet::backdrop{background:rgba(0,0,0,.4);animation:fadeIn .3s ease}
+.more-sheet.dragging{transition:none}
+.more-sheet.closing{transform:translateY(100%)!important;transition:transform .28s cubic-bezier(.4,0,1,1)}
+.more-sheet.closing::backdrop{opacity:0;transition:opacity .28s ease}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fadeIn{from{opacity:0}}
+.sheet-head{position:relative;display:flex;align-items:center;justify-content:center;padding:20px 16px 8px;touch-action:none;cursor:grab}
+.sheet-grabber{position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:9999px;background:var(--line-strong)}
+.sheet-head h2{margin:0;font-size:17px;line-height:22px;font-weight:600}
+.sheet-done{position:absolute;right:8px;top:14px;min-height:44px;padding:0 12px;border:0;background:none;color:var(--accent);font:inherit;font-size:17px;font-weight:600;cursor:pointer}
+.dark .sheet-done{color:var(--accent-bright)}
+.sheet-done:active{opacity:.5}
+.sheet-body{overflow-y:auto;padding:0 16px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+.sheet-group{margin:16px 4px 8px;font-size:13px;line-height:18px;font-weight:400;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.more-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.more-tile{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:84px;padding:10px 2px;border:0;border-radius:14px;background:transparent;color:var(--ink);font:inherit;font-size:12px;line-height:15px;font-weight:500;text-align:center;cursor:pointer;transition:background-color .15s ease}
+.more-tile:active{background:var(--fill);transition:none}
+.more-tile:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px}
+.more-ico{display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:var(--c,#8e8e93);color:#fff}
+.more-ico svg{display:block;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.more-tile.active{background:var(--accent-tint)}
+.more-tile.active span:last-child{color:var(--accent);font-weight:600}
+.dark .more-tile.active span:last-child{color:var(--accent-bright)}
+.more-tile[data-go="dashboard"]{--c:#0f766e} .more-tile[data-go="accounts"]{--c:#007aff} .more-tile[data-go="transactions"]{--c:#5856d6}
+.more-tile[data-go="cashflow"]{--c:#34c759} .more-tile[data-go="budget"]{--c:#ff9500} .more-tile[data-go="recurring"]{--c:#ff2d55}
+.more-tile[data-go="goals"]{--c:#af52de} .more-tile[data-go="splitwise"]{--c:#30b0c7} .more-tile[data-go="settings"]{--c:#8e8e93}
+.more-tile[data-go="editor"]{--c:#ff3b30} .more-tile[data-go="daily"]{--c:#00c7be} .more-tile[data-go="cards"]{--c:#a2845e} .more-tile[data-go="bank"]{--c:#32ade6}
+
+@media (max-width:640px){
+  /* Four tabs + More instead of a sideways-scrolling strip. */
+  .nav-float{overflow:visible;justify-content:space-around}
+  .nav-float .tab-btn{display:none}
+  .nav-float .tab-btn[data-tab="dashboard"],.nav-float .tab-btn[data-tab="transactions"],.nav-float .tab-btn[data-tab="daily"],.nav-float .tab-btn[data-tab="budget"]{display:flex;flex:1 1 0}
+  .nav-float .tab-btn[data-tab="dashboard"]{order:1} .nav-float .tab-btn[data-tab="transactions"]{order:2}
+  .nav-float .tab-btn[data-tab="daily"]{order:3} .nav-float .tab-btn[data-tab="budget"]{order:4}
+  .more-tab{order:5;flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:49px;padding:4px 0 2px;border:0;background:transparent;
+    color:#8e8e93;font:inherit;font-size:10px;line-height:12px;font-weight:500;letter-spacing:.01em;cursor:pointer}
+  .more-tab .tab-ico{display:block;width:25px;height:25px}
+  .more-tab .tab-ico circle{fill:currentColor;stroke:none}
+  .more-tab.active{color:var(--accent)} .dark .more-tab.active{color:var(--accent-bright)}
+  .more-tab:active{opacity:.6}
+}
+@media (prefers-reduced-motion: reduce){
+  .more-sheet,.more-sheet[open],.more-sheet::backdrop{animation:none;transition:none}
+  input[type="checkbox"]::after{transition:none}
+}
+
+/* ==== Liquid Glass ====
+   iOS 26's material language over the Apple system layer above: a soft
+   color field behind everything, translucent glass for cards and
+   chrome, raised tiles with a lit top edge, a 3D hero number, controls
+   that sink when pressed, a floating glass tab bar and an inset glass
+   sheet. Blur is used only on floating chrome (tab bar, sheet, FAB):
+   blurring every card makes iPhone scrolling stutter, and the color
+   field already reads through the translucent cards. */
+:root{
+  --bg:#eef1f7; --glass:rgba(255,255,255,.62); --glass-strong:rgba(255,255,255,.9); --glass-line:rgba(255,255,255,.8); --glass-edge:rgba(15,23,42,.06);
+  --raised:rgba(255,255,255,.72); --fill:rgba(118,118,128,.1); --field:rgba(255,255,255,.88); --field-line:rgba(15,23,42,.1);
+  --shadow-card:0 1px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(15,23,42,.04),0 16px 40px -20px rgba(15,23,42,.28);
+  --shadow-tile:0 1px 0 rgba(255,255,255,.95) inset,0 1px 2px rgba(15,23,42,.05),0 8px 20px -12px rgba(15,23,42,.25);
+  --spring:cubic-bezier(.3,1,.4,1);
+}
+.dark{
+  --bg:#06080c; --glass:rgba(28,30,36,.6); --glass-strong:rgba(34,36,42,.9); --glass-line:rgba(255,255,255,.09); --glass-edge:rgba(255,255,255,.06);
+  --raised:rgba(255,255,255,.06); --fill:rgba(118,118,128,.24); --field:rgba(255,255,255,.07); --field-line:rgba(255,255,255,.12);
+  --shadow-card:0 1px 0 rgba(255,255,255,.06) inset,0 20px 48px -24px rgba(0,0,0,.9);
+  --shadow-tile:0 1px 0 rgba(255,255,255,.07) inset,0 10px 24px -14px rgba(0,0,0,.8);
+}
+/* touch-action: taps fire at once (no double-tap-to-zoom wait); pinch zoom still works. */
+html{background:var(--bg);touch-action:manipulation}
+body{background:transparent}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(70% 45% at 0% 0%,rgba(45,212,191,.34),transparent 70%),radial-gradient(60% 40% at 100% 6%,rgba(129,140,248,.3),transparent 70%),
+    radial-gradient(70% 45% at 90% 100%,rgba(244,114,182,.2),transparent 70%),radial-gradient(55% 40% at 0% 80%,rgba(56,189,248,.2),transparent 70%)}
+.dark body::before{background:radial-gradient(70% 45% at 0% 0%,rgba(45,212,191,.2),transparent 70%),radial-gradient(60% 40% at 100% 6%,rgba(129,140,248,.18),transparent 70%),
+    radial-gradient(70% 45% at 90% 100%,rgba(244,114,182,.1),transparent 70%),radial-gradient(55% 40% at 0% 80%,rgba(56,189,248,.1),transparent 70%)}
+.app-header{background:transparent}
+:focus:not(:focus-visible){outline:none}
+button,summary,.tab-btn,.more-tab,.more-tile{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* Glass cards and raised tiles */
+.card{background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--shadow-card);border-radius:24px}
+.stat,.sum-tile,.v2-tile,.chart-panel,.card-panel,.compare-toggle,.month-switch,.tx-group,.v2-bulk,.ms-card{background:var(--raised);border:1px solid var(--glass-edge);box-shadow:var(--shadow-tile);border-radius:18px}
+button.v2-tile,.tx-main,.v2-tx,.more-tile{transition:transform .35s var(--spring),background-color .2s ease}
+button.v2-tile:active,.tx-main:active,.v2-tx:active,.more-tile:active{transform:scale(.97);transition:transform .12s ease-out}
+
+/* The 3D hero number: a lit teal slab with a sheen across its top. */
+.sum-tile:first-child,.v2-tiles > .v2-tile:first-child{position:relative;overflow:hidden;border:0;color:#fff;
+  background:linear-gradient(150deg,#2dd4bf 0%,#0f766e 52%,#134e4a 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 -1px 0 rgba(0,0,0,.15) inset,0 18px 36px -14px rgba(15,118,110,.65)}
+.sum-tile:first-child::before,.v2-tiles > .v2-tile:first-child::before{content:"";position:absolute;inset:0 0 45% 0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0))}
+.v2-tiles > .v2-tile:first-child *{color:#fff!important}
+.v2-tiles > .v2-tile:first-child > :not(:first-child):not(:nth-child(2)){color:rgba(255,255,255,.82)!important}
+.sum-tile:first-child .sum-label{color:rgba(255,255,255,.85)}
+
+/* Buttons: a lit gradient for primary, glass for secondary; both sink when pressed. */
+.btn-primary,.actions .btn-primary,.dark .actions .btn-primary,.actions .btn-primary:hover,.dark .actions .btn-primary:hover,button.toggle.active,.dark button.toggle.active,.pager-btn.current{background:linear-gradient(180deg,#14b8a6,#0f766e);color:#fff;border:0;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 8px 18px -8px rgba(15,118,110,.7)}
+.actions button,.button-like,button.toggle,.tx-edit button:not(.date-btn),.btn-ghost{background:var(--field);border:1px solid var(--field-line);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 2px 6px -3px rgba(15,23,42,.15)}
+.dark .actions button,.dark .button-like,.dark button.toggle,.dark .tx-edit button:not(.date-btn),.dark .btn-ghost{box-shadow:0 1px 0 rgba(255,255,255,.06) inset}
+.actions button,.button-like,button.toggle,.btn-primary,.btn-ghost,.pager-btn,.tx-edit button,.sheet-done,.date-btn{transition:transform .35s var(--spring),filter .2s ease,background-color .2s ease}
+.actions button:active,.button-like:active,button.toggle:active,.btn-primary:active,.btn-ghost:active,.pager-btn:active:not(:disabled),.tx-edit button:active,.date-btn:active{transform:scale(.95);opacity:1;filter:brightness(.94);transition:transform .1s ease-out}
+
+/* Fields: one style everywhere, 16px text so iOS never zooms on focus,
+   44px tall, and selects drawn by us (WebKit otherwise ignores their size). */
+:is(input:not([type=checkbox]):not([type=hidden]):not([type=radio]):not([type=range]):not([type=file]),select,textarea){-webkit-appearance:none;appearance:none;
+  font:inherit;font-size:16px;line-height:22px;min-height:44px;padding:10px 14px;border:1px solid var(--field-line);border-radius:12px;background-color:var(--field);color:var(--ink);
+  box-shadow:0 1px 2px rgba(15,23,42,.05) inset;transition:border-color .2s ease,box-shadow .2s ease}
+:is(input:not([type=checkbox]):not([type=hidden]):not([type=radio]):not([type=range]):not([type=file]),select,textarea):focus{outline:none;border-color:var(--accent-bright);box-shadow:0 0 0 4px var(--accent-tint)}
+select{padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+  background-repeat:no-repeat!important;background-position:right 14px center!important;background-size:12px 8px!important;text-overflow:ellipsis}
+::placeholder{color:var(--muted);opacity:.75}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-date-and-time-value{text-align:left}
+textarea{min-height:88px}
+
+.txd-head h3{font-size:20px;line-height:26px;font-weight:700;letter-spacing:-.015em}
+/* Small controls: glass, and 44px tall on phones (below). */
+.v2-mini{background:var(--field);border:1px solid var(--field-line);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 2px 6px -3px rgba(15,23,42,.15);transition:transform .35s var(--spring)}
+.v2-mini:active{transform:scale(.92);transition:transform .1s ease-out}
+/* Day headers sit on the glass, not on a white band. */
+.v2-day-head{background:transparent;position:static}
+
+/* Desktop tabs: a glass segmented control */
+.nav-float{background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--shadow-card);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8)}
+
+/* Inset glass sheet (iOS 26): floats off the edges, rounded all round. */
+.more-sheet{inset:auto 8px calc(8px + env(safe-area-inset-bottom)) 8px;width:auto;border-radius:32px;background:var(--glass-strong);border:1px solid var(--glass-line);
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 24px 60px -12px rgba(0,0,0,.35);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8)}
+.more-sheet::backdrop{background:rgba(0,0,0,.28)}
+.more-sheet.closing{transform:translateY(calc(100% + 24px))!important}
+.sheet-body{padding-bottom:20px}
+.more-ico{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 6px 14px -6px var(--c,#8e8e93);background:linear-gradient(160deg,color-mix(in srgb,var(--c,#8e8e93) 80%,#fff),var(--c,#8e8e93) 60%)}
+
+@media (max-width:640px){
+  header > div{padding-bottom:4px}
+  /* Floating glass tab bar, lifted clear of the home indicator and of
+     Safari's own floating toolbar on iOS 26. */
+  body{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  .nav-float{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:6px;gap:2px;border-radius:32px;
+    background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 14px 34px -10px rgba(15,23,42,.35);
+    backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8)}
+  .dark .nav-float{background:rgba(32,34,40,.8);border-color:rgba(255,255,255,.1);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 14px 34px -10px rgba(0,0,0,.8)}
+  .nav-float .tab-btn,.nav-float .tab-btn:hover,.more-tab{min-height:54px;border-radius:26px;color:var(--muted);transition:transform .35s var(--spring),background-color .25s ease,color .25s ease}
+  .nav-float .tab-btn.active,.dark .nav-float .tab-btn.active,.more-tab.active{background:var(--accent-tint);color:var(--accent);box-shadow:0 1px 0 rgba(255,255,255,.6) inset}
+  .dark .nav-float .tab-btn.active,.dark .more-tab.active{color:var(--accent-bright);box-shadow:none}
+  .nav-float .tab-btn:active,.more-tab:active{transform:scale(.9);opacity:1;transition:transform .1s ease-out}
+  #addExpenseTopBtn{right:20px;bottom:calc(92px + env(safe-area-inset-bottom));width:54px;height:54px;border:1px solid rgba(255,255,255,.35);
+    background:linear-gradient(180deg,#14b8a6,#0f766e);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 14px 28px -8px rgba(15,118,110,.7)}
+  #addExpenseTopBtn:active{transform:scale(.9)}
+  .card{border-radius:22px;padding:16px}
+  .v2-mini{min-height:44px;min-width:44px;font-size:15px}
+  /* The calendar is a bottom sheet on phones: dim the page behind it so
+     it reads as one, and a tap on the dimmed part closes it (the
+     document click handler in datepicker.js). */
+  .cal-pop{z-index:70;border-radius:28px;background:var(--glass-strong);border:1px solid var(--glass-line);
+    box-shadow:0 0 0 100vmax rgba(0,0,0,.28),0 24px 60px -12px rgba(0,0,0,.35);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8)}
+}
+/* Installed to the Home Screen there is no browser toolbar to clear. */
+@media (max-width:640px) and (display-mode: standalone){
+  .nav-float{bottom:calc(4px + env(safe-area-inset-bottom))}
+  #addExpenseTopBtn{bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+
+/* Tab changes: the new screen rises in (goTab in shell.js adds .entering). */
+[data-section].entering{animation:tabIn .38s var(--spring) both}
+@keyframes tabIn{from{opacity:0;transform:translateY(14px)}}
+
+@media (prefers-reduced-motion: reduce){
+  [data-section].entering{animation:none}
+  .actions button:active,.btn-primary:active,.tx-main:active,.v2-tx:active,.more-tile:active,.nav-float .tab-btn:active,.more-tab:active{transform:none}
+}
+@media (prefers-reduced-transparency: reduce){
+  .nav-float,.dark .nav-float,.more-sheet{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+  .card{background:var(--surface)}
+}
+
+/* ---- Dashboard sections and the phone tab bar's center Add button ---- */
+.month-card .review-banner{margin:0 0 12px}
+.demo-banner{margin:0 0 16px;padding:8px 14px;border-radius:12px;border:1px dashed var(--accent-bright);background:var(--raised);font-size:14px;font-weight:600}
+.demo-banner .demo-clear{padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
+.dark .demo-banner .demo-clear{color:var(--accent-bright)}
+.demo-classic{display:none;font-weight:400}
+body[data-tab="editor"] .demo-classic,body[data-tab="daily"] .demo-classic,body[data-tab="cards"] .demo-classic,body[data-tab="bank"] .demo-classic{display:inline}
+body:not([data-tab="dashboard"]) .demo-welcome{display:none}
+/* First-run checklist (js/ui/v2/home.js): Home only. */
+body:not([data-tab="dashboard"]) #setupBox{display:none}
+.setup-count{margin:0}
+.setup-list{list-style:none;margin:8px 0 12px;padding:0;display:grid;gap:6px}
+.setup-go{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--raised);color:inherit;font:inherit;cursor:pointer}
+.setup-go:hover{border-color:var(--accent-bright)}
+.setup-tick{flex:none;display:inline-grid;place-items:center;width:22px;height:22px;margin-top:1px;border-radius:9999px;border:2px solid var(--line-strong);font-size:13px;font-weight:700}
+.setup-item.done .setup-tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.setup-item.done .setup-name{text-decoration:line-through;color:var(--muted)}
+.setup-text{display:grid;gap:2px}
+.setup-name{font-weight:600}
+.setup-sub{font-size:13px;color:var(--muted)}
+.setup-howto{margin:4px 0 8px;padding-left:20px;display:grid;gap:6px;font-size:14px}
+/* Settings: Advanced is one collapsed card until opened. */
+.settings-advanced > summary{display:grid;gap:4px;cursor:pointer;list-style:none}
+.settings-advanced > summary::-webkit-details-marker{display:none}
+.settings-advanced > summary .card-title{margin:0}
+.settings-advanced > summary .card-title::after{content:" ▸";color:var(--muted)}
+.settings-advanced[open] > summary .card-title::after{content:" ▾"}
+.settings-advanced > summary .hint{margin:0}
+/* "What's this?" explainers next to jargon (MCP, bank sync, Roll over). */
+.explain{margin:0 0 8px;font-size:14px}
+.explain summary{cursor:pointer;color:var(--accent);font-weight:600;display:inline-block;min-height:28px}
+.dark .explain summary{color:var(--accent-bright)}
+.explain p{margin:4px 0 0;color:var(--muted)}
+.auth-alt{margin:12px 0 0}
+.link-btn{padding:0;border:0;background:none;box-shadow:none;color:var(--accent);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
+.dark .link-btn{color:var(--accent-bright)}
+.plan-settings-title{margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--line)}
+.add-tab{display:none}
+@media (max-width:640px){
+  /* Home · Activity · ＋ · Budget · More. Daily opens from ＋ (and More),
+     so its own tab and the floating + button step aside. */
+  .nav-float .tab-btn[data-tab="daily"],#addExpenseTopBtn{display:none!important}
+  .nav-float .tab-btn[data-tab="budget"]{order:4}
+  .add-tab{order:3;flex:0 0 auto;display:grid;place-items:center;width:58px;height:54px;margin:0 2px;padding:0;border:0;border-radius:27px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,#14b8a6,#0f766e);box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 10px 20px -8px rgba(15,118,110,.75);
+    transition:transform .35s var(--spring),filter .2s ease}
+  .add-tab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+  .add-tab:active{transform:scale(.9);filter:brightness(.95);transition:transform .1s ease-out}
+  .add-tab.active{box-shadow:0 0 0 3px var(--accent-tint),0 1px 0 rgba(255,255,255,.45) inset,0 10px 20px -8px rgba(15,118,110,.75)}
+  .add-tab:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px}
+  body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+}
+/* A chart with nothing to draw shows its one-line message, not a tall empty box. */
+.chart-box:has(.chart-fallback:not([hidden])){height:auto}
+
+/* Brand logo (lotus scale mark) */
+.brand-logo{width:46px;height:46px;border-radius:12px;display:block;margin-bottom:12px}
+.brand-mark{width:20px;height:20px;border-radius:5px;vertical-align:-5px}
+
+/* "Guide & help" at the foot of the More sheet */
+.sheet-links{display:flex;gap:8px;margin:0 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet-help{display:block;flex:1;padding:12px;border-radius:14px;text-align:center;font-weight:600;color:var(--accent);background:var(--fill);text-decoration:none}
+.dark .sheet-help{color:var(--accent-bright)}
+.sheet-help:active{opacity:.6}
+
+/* Wide screens: the header is one slim row (logo, name, status) so the
+   tabs sit near the top. Phones keep their own header (above). */
+@media (min-width:641px){
+  .app-header > div{padding-top:16px;padding-bottom:12px}
+  .nav-float{margin-top:0}
+  .head-row{align-items:center}
+  .brand{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+  .brand .brand-logo{width:32px;height:32px;margin:0;border-radius:8px}
+  .brand .app-title{font-size:24px;line-height:32px}
+  .brand .app-sub,.brand .app-sub2{display:none}
+  .brand > p:last-child{margin:0}
+}
+
+/* Eye button: amounts hidden. The formatters print $•••; these cover
+   what they don't: typed amounts and AI-written answers. */
+#hideAmountsBtn .eye-shut{display:none}
+.hide-amounts #hideAmountsBtn .eye-open{display:none} .hide-amounts #hideAmountsBtn .eye-shut{display:block}
+.hide-amounts #hideAmountsBtn{color:var(--accent)}
+.hide-amounts input[type="number"],.hide-amounts input[inputmode="decimal"],.hide-amounts #askLog{filter:blur(6px)}
+.hide-amounts input[type="number"]:focus,.hide-amounts input[inputmode="decimal"]:focus{filter:none}
+@media (max-width:640px){
+  /* Beside the theme button, pinned top-right the same way. */
+  #hideAmountsBtn{position:absolute;top:calc(env(safe-area-inset-top) + 16px);right:60px;width:36px;height:36px;min-height:36px;padding:0}
+  .app-title{padding-right:156px}
+}
+/* Market recap + investments */
+.v2-market-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.v2-market-chip{display:inline-flex;gap:6px;align-items:baseline;padding:4px 10px;border-radius:9999px;background:var(--sunken);font-size:13px;line-height:18px;font-variant-numeric:tabular-nums}
+.v2-market-chip.pos span{color:var(--pos)} .v2-market-chip.neg span{color:var(--neg)}
+.v2-market-text{margin:0;font-size:15px;line-height:22px}
+.v2-market-date{margin:0 0 4px}
+.v2-market-news{margin-top:12px} .v2-market-news summary{cursor:pointer;font-weight:600}
+.v2-market-news ul{margin:8px 0 0;padding-left:18px} .v2-market-news li{margin:4px 0;font-size:14px;line-height:20px}
+.v2-tile-value.v2-chg{font-size:18px;line-height:26px}
+.v2-chg.pos{color:var(--pos)} .v2-chg.neg{color:var(--neg)}
+.v2-range{display:flex;gap:6px;margin:12px 0}
+.v2-range .v2-mini.on{border-color:var(--accent);color:var(--accent)}
+.more-tile[data-go="investments"]{--c:#5ac8fa}
+/* Customize dashboard: one row per card. */
+.layout-row{flex-wrap:nowrap}
+.layout-row .v2-mini{min-width:44px}
+.layout-row .v2-mini:disabled{opacity:.35;cursor:default;pointer-events:none}
+#dashCustomize{display:block;margin:0 auto 24px}
+
+/* Notifications bell (js/ui/notify.js) */
+.notif-wrap{position:relative}
+#notifBtn{position:relative}
+.notif-badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--neg);color:#fff;font-size:11px;line-height:18px;font-weight:700;text-align:center}
+.notif-panel{position:absolute;right:0;top:48px;z-index:60;width:min(360px,calc(100vw - 32px));max-height:min(480px,70vh);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px -8px rgba(15,23,42,.35);text-align:left}
+.notif-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font-size:15px}
+.notif-head span{color:var(--muted);font-size:12px}
+.notif-list{list-style:none;margin:0;padding:0}
+.notif-list li{padding:10px 16px;border-bottom:1px solid var(--line);font-size:14px;line-height:20px}
+.notif-list li:last-child{border-bottom:0}
+.notif-list li.unread{background:var(--accent-tint)}
+.notif-list li[data-go]{cursor:pointer}
+.notif-list .notif-body{color:var(--muted);white-space:pre-line;font-size:13px;line-height:18px}
+.notif-list time{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.notif-empty{padding:16px;color:var(--muted);font-size:14px}
+.hide-amounts .notif-list{filter:blur(6px)}
+@media (max-width:640px){
+  /* Pinned top-right beside the eye and theme buttons. */
+  .notif-wrap{position:absolute;top:calc(env(safe-area-inset-top) + 16px);right:104px}
+  #notifBtn{width:36px;height:36px;min-height:36px}
+  .notif-panel{position:fixed;top:calc(env(safe-area-inset-top) + 60px);left:16px;right:16px;width:auto}
+}
